@@ -10,13 +10,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainModel", "DomainModel\DomainModel.csproj", "{F2530454-C509-4BE7-A6A7-D4FD692F3EFD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CustomerDomain", "CustomerDomain\CustomerDomain.csproj", "{F2530454-C509-4BE7-A6A7-D4FD692F3EFD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoClient", "DemoClient\DemoClient.csproj", "{3866C80B-C719-47CC-892A-4D01C2B860FB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoHost", "DemoHost\DemoHost.csproj", "{FEA1026D-70D8-42A2-9C26-93D46C14E0D4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CustomerService", "ServiceCustomerAPI\CustomerService.csproj", "{F3152060-31D5-435B-ABA0-E622F8706B1A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CustomerService", "CustomerService\CustomerService.csproj", "{F3152060-31D5-435B-ABA0-E622F8706B1A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventSourcingInfrastructure", "EventSourcingInfrastructure\EventSourcingInfrastructure.csproj", "{D6475866-39A0-46BE-A33A-EE46D165F5BA}"
 EndProject

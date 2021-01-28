@@ -14,7 +14,7 @@ namespace CustomerService
     public class CustomerQueries 
         : Grain, ICustomerQueries
     {
-        private static string ConnectionString = @"Server=MSILAPTOP\MSSQLSERVER01;Integrated Security=true;Database=OrleansCES";
+        private static string ConnectionString = @"Server=localhost;Integrated Security=true;Database=OrleansCES";
 
         private readonly IClusterClient OrleansClient;
         private readonly ILogger<CustomerQueries> Log;

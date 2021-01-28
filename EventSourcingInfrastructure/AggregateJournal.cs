@@ -14,7 +14,7 @@ namespace EventSourcingInfrastructure
         : EventSourcedGrain<TAggregate, DomainEventBase>
         where TAggregate : AggregateRoot, new()
     {
-        private static string ConnectionString = @"Server=MSILAPTOP\MSSQLSERVER01;Integrated Security=true;Database=OrleansCES";
+        private static string ConnectionString = @"Server=localhost;Integrated Security=true;Database=OrleansCES";
 
         private readonly ILogger<AggregateJournal<TAggregate>> Log;
 
