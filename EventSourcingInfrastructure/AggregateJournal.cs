@@ -5,6 +5,7 @@ using Orleans;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -14,7 +15,7 @@ namespace EventSourcingInfrastructure
         : EventSourcedGrain<TAggregate, DomainEventBase>
         where TAggregate : AggregateRoot, new()
     {
-        private static string ConnectionString = @"Server=localhost;Integrated Security=true;Database=OrleansCES";
+        private static string ConnectionString = @"Server=MSILAPTOP\MSSQLSERVER01;Integrated Security=true;Database=OrleansCES";
 
         private readonly ILogger<AggregateJournal<TAggregate>> Log;
 
@@ -31,19 +32,41 @@ namespace EventSourcingInfrastructure
             get => ((Grain)this).GetPrimaryKey();
         }
 
+        int readRetries = 0;
         public async Task<KeyValuePair<int, TAggregate>> ReadStateFromStorage()
         {
-            Log.LogInformation("ReadStateFromStorage: start");
-            using var connection = new SqlConnection(ConnectionString);
-            await connection.OpenAsync();
-            var (etag, state) = await ReadSnapshot(connection);
-            Log.LogInformation($"ReadStateFromStorage: ReadSnapshot loaded etag {etag}");
-            var newETag = await ApplyNewerEvents(connection, etag, state);
-            if (newETag != etag) await WriteNewSnapshot(connection, newETag, state);
-            etag = newETag;
-            await connection.CloseAsync();
-            Log.LogInformation($"ReadStateFromStorage: returning etag {etag}");
-            return new KeyValuePair<int, TAggregate>(etag, state);
+            try
+            {
+                Log.LogInformation("ReadStateFromStorage: start");
+                using var connection = new SqlConnection(ConnectionString);
+                await connection.OpenAsync();
+                
+                var (etag, state) = await ReadSnapshot(connection);
+                Log.LogInformation($"ReadStateFromStorage: ReadSnapshot loaded etag {etag}");
+                
+                var newETag = await ApplyNewerEvents(connection, etag, state);
+                
+                if (newETag != etag) await WriteNewSnapshot(connection, newETag, state);
+                etag = newETag;
+                await connection.CloseAsync();
+
+                Log.LogInformation($"ReadStateFromStorage: returning etag {etag}");
+                readRetries = 0;
+                return new KeyValuePair<int, TAggregate>(etag, state);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Error {ex.Message}  retry {readRetries}.");
+                if (readRetries >= 12)
+                {
+                    var aggregateType = typeof(TAggregate);
+                    Log.LogError($"Repeated error in ReadStateFromStorage for {aggregateType.Name}: {ex.Message}");
+                    return new KeyValuePair<int, TAggregate>(-1, null);  // Currently the only way to break JournaledGrain from infinite retry loop.
+                }
+
+                readRetries++;
+                throw ex;
+            }
         }
 
 
@@ -122,17 +145,27 @@ namespace EventSourcingInfrastructure
             cmd.Parameters.AddWithValue("@etag", snapshotETag);
 
             using var reader = await cmd.ExecuteReaderAsync();
-            int etag = snapshotETag;
+            int etag = snapshotETag;            
+
             if (reader.HasRows)
             {
                 while (await reader.ReadAsync())
                 {
-                    etag = reader.GetInt32(0);
+                    etag = reader.GetInt32(0);               
                     var payload = reader.GetString(1);
                     var eventbase = JsonConvert.DeserializeObject(payload, JsonSettings) as DomainEventBase;
-                    Log.LogInformation($"ApplyNewerEvents: applying event {eventbase.GetType()} for etag {etag}");
-                    MethodInfo apply = typeof(TAggregate).GetMethod("Apply", new Type[] { eventbase.GetType() });
-                    apply.Invoke(state, new object[] { eventbase });
+                    var eventType = eventbase.GetType();
+                    Log.LogInformation($"ApplyNewerEvents: applying event {eventType.Name} for etag {etag}");
+
+                    MethodInfo apply = aggregateType.GetMethod("Apply", new Type[] { eventbase.GetType() });
+                    if (apply == null)
+                    {
+                        throw new InvalidOperationException($"No Apply method found for {aggregateType.Name} {eventType.Name} event.");
+                    }
+                    else
+                    {
+                        apply.Invoke(state, new object[] { eventbase });
+                    }
                 }
             }
             await reader.CloseAsync();

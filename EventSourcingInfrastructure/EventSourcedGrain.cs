@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Reflection;
+using System;
 
 namespace EventSourcingInfrastructure
 {
@@ -17,7 +18,7 @@ namespace EventSourcingInfrastructure
         public new Task RaiseEvent<TEvent>(TEvent @event)
             where TEvent : TEventBase
         {
-            if (CallDomainEventMethod(@event))
+            if (CallDomainCanApplyMethod(@event))
             {
                 base.RaiseEvent(@event);
             }
@@ -43,15 +44,16 @@ namespace EventSourcingInfrastructure
         public new async Task ConfirmEvents()
             => await base.ConfirmEvents();
 
-        private bool CallDomainEventMethod<TEvent>(TEvent @event)
+        private bool CallDomainCanApplyMethod<TEvent>(TEvent @event)
         {
             var domainType = typeof(TDomainState);
             var eventType = typeof(TEvent);
-            var eventMethod = domainType.GetMethod(eventType.Name, BindingFlags.Public | BindingFlags.Instance);
-            
-            if (eventMethod != null)
+           
+            var canApplyMethod = domainType.GetMethod("CanApply", new Type[] { eventType });
+
+            if (canApplyMethod != null)
             {
-                return (bool)eventMethod.Invoke(this.State, new object[] { @event });
+                return (bool)canApplyMethod.Invoke(this.State, new object[] { @event });
             }
 
             return true;

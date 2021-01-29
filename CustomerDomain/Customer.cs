@@ -21,7 +21,7 @@ namespace DomainModel
             set { base.Id = value; }
         }
 
-        public bool CreateCustomer(DomainEvents.CreateCustomer @event)
+        public bool CanApply(DomainEvents.CreateCustomer @event)
         {
             if (@event.MailingAddress == null)
             {
@@ -35,7 +35,7 @@ namespace DomainModel
             return true;
         }
 
-        public bool AddAccount(DomainEvents.AddAccount @event)
+        public bool CanApply(DomainEvents.AddAccount @event)
         {
             if(string.IsNullOrWhiteSpace(@event.Account.AccountNumber))
                 throw new DomainValidationException("Account Number not provided to Add Account.");
@@ -43,7 +43,7 @@ namespace DomainModel
             return true;
         }
 
-        public bool ChangeMailingAddress(DomainEvents.ChangeMailingAddress @event)
+        public bool CanApply(DomainEvents.ChangeMailingAddress @event)
         {
             if (@event.Address == null)
             {
@@ -57,12 +57,7 @@ namespace DomainModel
             return true;
         }
 
-        public bool ChangePrimaryResidence(DomainEvents.ChangePrimaryResidence @event)
-        {
-            return true;
-        }
-
-        public bool PostTransaction(DomainEvents.PostTransaction @event)
+        public bool CanApply(DomainEvents.PostTransaction @event)
         {
             var acct = Accounts.Find(a => a.AccountNumber.Equals(@event.AccountNumber));
 

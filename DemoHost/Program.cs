@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 
 // for grain references
 using CustomerService;
-using CustomerService;
-using DomainModel;
 
 namespace DemoHost
 {

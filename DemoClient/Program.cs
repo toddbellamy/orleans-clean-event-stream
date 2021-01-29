@@ -16,7 +16,7 @@ namespace DemoClient
         {
             Console.WriteLine("Connecting client.");
             var clusterClient = await GetOrleansClusterClient();
-
+            
             Console.WriteLine("Retrieving CQRS grains.");
             var cmd = clusterClient.GetGrain<ICustomerCommands>(0);
             var query = clusterClient.GetGrain<ICustomerQueries>(0);
@@ -56,7 +56,7 @@ namespace DemoClient
                 snapshot = await query.FindCustomer(id);
             }
 
-            if(snapshot.Success)
+            if(snapshot.Success && snapshot.Output != null)
             {
                 Console.WriteLine($"Customer name: {snapshot.Output.PrimaryAccountHolder.FullName}");
 
@@ -74,12 +74,13 @@ namespace DemoClient
                 }
 
                 snapshot = await cmd.PostAccountTransaction(customer.Id, accountNumber, 0.99m);
-                Console.WriteLine($"Post Account Transaction result: {snapshot.Message}");
+                var msg = snapshot.Success ? "Successful!" : snapshot.Message;
+                Console.WriteLine($"Post Account Transaction result: {msg}");
                 customer = snapshot.Output;
             }
             else
             {
-                Console.WriteLine($"Exception:\n{snapshot.Message}");
+                Console.WriteLine($"Exception:\n{snapshot.Message ?? "Obtaining Customer failed."}");
             }
 
             await clusterClient.Close();
@@ -110,7 +111,7 @@ namespace DemoClient
                     parts.AddApplicationPart(typeof(CustomerJournal).Assembly).WithReferences();
                 })
                 .Build();
-
+            
             await client.Connect();
 
             return client;
