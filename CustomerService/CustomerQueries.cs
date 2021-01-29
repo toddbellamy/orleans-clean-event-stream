@@ -14,10 +14,20 @@ namespace CustomerService
     public class CustomerQueries 
         : Grain, ICustomerQueries
     {
-        private static string ConnectionString = @"Server=MSILAPTOP\MSSQLSERVER01;Integrated Security=true;Database=OrleansCES";
+        private static string ConnectionString = string.Empty;
 
         private readonly IClusterClient OrleansClient;
         private readonly ILogger<CustomerQueries> Log;
+
+        static CustomerQueries()
+        {
+            var connect = Environment.GetEnvironmentVariable("OrleansCESConnection");
+            if (string.IsNullOrWhiteSpace(connect))
+            {
+                throw new ApplicationException($"Connection string not found for {nameof(CustomerQueries)} component.");
+            }
+            ConnectionString = connect;
+        }
 
         public CustomerQueries(IClusterClient clusterClient, ILogger<CustomerQueries> log)
         {

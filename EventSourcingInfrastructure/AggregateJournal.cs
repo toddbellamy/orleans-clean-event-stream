@@ -5,7 +5,6 @@ using Orleans;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -15,11 +14,21 @@ namespace EventSourcingInfrastructure
         : EventSourcedGrain<TAggregate, DomainEventBase>
         where TAggregate : AggregateRoot, new()
     {
-        private static string ConnectionString = @"Server=MSILAPTOP\MSSQLSERVER01;Integrated Security=true;Database=OrleansCES";
+        private static string ConnectionString = string.Empty;
 
         private readonly ILogger<AggregateJournal<TAggregate>> Log;
 
         private Type aggregateType;
+
+        static AggregateJournal()
+        {
+            var connect = Environment.GetEnvironmentVariable("OrleansCESConnection");
+            if(string.IsNullOrWhiteSpace(connect))
+            {
+                throw new ApplicationException($"Connection string not found for {typeof(TAggregate).Name} component.");
+            }
+            ConnectionString = connect;
+        }
 
         public AggregateJournal(ILogger<AggregateJournal<TAggregate>> log)
         {
@@ -56,7 +65,6 @@ namespace EventSourcingInfrastructure
             }
             catch(Exception ex)
             {
-                Console.WriteLine($"Error {ex.Message}  retry {readRetries}.");
                 if (readRetries >= 12)
                 {
                     var aggregateType = typeof(TAggregate);
